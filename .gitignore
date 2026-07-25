@@ -1,0 +1,17 @@
+# Python virtual environment - never commit this
+venv/
+
+# Environment variables - may contain secrets
+backend/.env
+
+# Whisper model cache - large files, re-downloaded automatically
+*.pt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# OS clutter
+.DS_Store
+Thumbs.db
