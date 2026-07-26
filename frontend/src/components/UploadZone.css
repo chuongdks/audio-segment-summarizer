@@ -1,0 +1,52 @@
+.upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-5);
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.upload-zone:hover,
+.upload-zone:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  outline: none;
+}
+
+.upload-zone--dragging {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.upload-zone__icon {
+  color: var(--accent);
+  margin-bottom: var(--space-2);
+}
+
+.upload-zone__primary {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.upload-zone__secondary {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.upload-zone__link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.upload-zone__formats {
+  color: var(--text-muted);
+}

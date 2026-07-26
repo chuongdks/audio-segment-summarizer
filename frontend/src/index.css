@@ -1,0 +1,62 @@
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Palette — dark studio, green phosphor accent (like old recording consoles) */
+  --bg-base:       #0f1117;
+  --bg-surface:    #181c27;
+  --bg-raised:     #1f2437;
+  --bg-hover:      #262d42;
+
+  --border:        #2a3148;
+  --border-subtle: #1e2538;
+
+  --text-primary:  #e8ecf4;
+  --text-secondary:#8892aa;
+  --text-muted:    #4a5470;
+
+  /* Phosphor green — the signature: timestamp links glow like a VU meter */
+  --accent:        #4ade80;
+  --accent-dim:    #1a3d29;
+  --accent-glow:   rgba(74, 222, 128, 0.15);
+
+  --error:         #f87171;
+  --error-dim:     #3d1a1a;
+
+  /* Typography */
+  --font-ui:       "Inter", system-ui, sans-serif;
+  --font-mono:     "IBM Plex Mono", "Fira Code", monospace;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Utility ───────────────────────────────────────────────────────────────── */
+button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }

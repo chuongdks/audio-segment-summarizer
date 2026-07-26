@@ -1,0 +1,62 @@
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.status-bar--error {
+  border-color: var(--error);
+  background: var(--error-dim);
+}
+
+/* Spinning ring */
+.status-bar__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error dot */
+.status-bar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--error);
+  flex-shrink: 0;
+}
+
+.status-bar__text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.status-bar--error .status-bar__text {
+  color: var(--error);
+}
+
+.status-bar__retry {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.status-bar__retry:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
