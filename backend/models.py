@@ -48,3 +48,11 @@ class MeetingSummary(BaseModel):
     talking_points: list[TalkingPoint]
     action_items: list[ActionItem]
     model_used: str                         # which Ollama model produced this
+
+
+# ── Step 3: Combined response ─────────────────────────────────────────────────
+
+class TranscribeAndSummarizeResult(BaseModel):
+    """Combined response for the /transcribe-and-summarize endpoint."""
+    transcription: TranscriptionResult
+    summary: MeetingSummary

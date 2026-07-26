@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from transcriber import Transcriber
 from summarizer import summarize
-from models import TranscriptionResult, MeetingSummary, TranscriptSegment
+from models import TranscriptionResult, MeetingSummary, TranscriptSegment, TranscribeAndSummarizeResult
 
 
 # ── Lifespan: warm up Whisper at startup ─────────────────────────────────────
@@ -93,23 +93,29 @@ async def summarize_segments(segments: list[TranscriptSegment]):
         raise HTTPException(status_code=500, detail=f"Summarization failed: {e}")
 
 
-@app.post("/transcribe-and-summarize", response_model=MeetingSummary)
+@app.post("/transcribe-and-summarize", response_model=TranscribeAndSummarizeResult)
 async def transcribe_and_summarize(file: UploadFile = File(...)):
     """
-    One-shot endpoint: upload audio → get back a full structured summary.
-    This is what the Electron frontend will call.
+    One-shot endpoint: upload audio → transcription + structured summary.
+    Use transcription.segments to verify timestamps and language detection.
+    Use summary for the structured meeting notes.
     """
     tmp_path, _ = _save_upload(file)
     try:
-        result = Transcriber.get().transcribe(tmp_path)
+        transcription = Transcriber.get().transcribe(tmp_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
     finally:
         os.unlink(tmp_path)
 
     try:
-        return summarize(result.segments)
+        meeting_summary = summarize(transcription.segments)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Summarization failed: {e}")
+
+    return TranscribeAndSummarizeResult(
+        transcription=transcription,
+        summary=meeting_summary,
+    )
