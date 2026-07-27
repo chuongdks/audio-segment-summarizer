@@ -3,6 +3,7 @@ venv/
 
 # Environment variables - may contain secrets
 backend/.env
+.env
 
 # Whisper model cache - large files, re-downloaded automatically
 *.pt

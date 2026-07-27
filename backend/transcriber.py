@@ -7,10 +7,10 @@ from models import TranscriptSegment, TranscriptionResult
 #   "base"   — good for clear audio     (~74M params)
 #   "medium" — sweet spot               (~769M params)  ← recommended
 #   "large-v3" — best accuracy          (~1550M params)
-WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL", "medium")
+WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL", "base")
 
 # "cpu" works everywhere; use "cuda" if you have an Nvidia GPU
-DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
+DEVICE = os.getenv("WHISPER_DEVICE", "cuda")
 COMPUTE_TYPE = "int8" if DEVICE == "cpu" else "float16"
 
 

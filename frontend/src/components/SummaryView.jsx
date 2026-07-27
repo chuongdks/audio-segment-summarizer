@@ -1,4 +1,5 @@
-import { Clock, CheckSquare, MessageSquare } from "lucide-react";
+import { useState } from "react";
+import { Clock, CheckSquare, Square, MessageSquare, ChevronRight } from "lucide-react";
 import "./SummaryView.css";
 
 function formatTime(seconds) {
@@ -7,27 +8,147 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// Clickable timestamp pill
+function TimestampLink({ seconds, onSeek }) {
+  if (seconds === 0) return null;
+  return (
+    <button
+      className="timestamp-link"
+      onClick={() => onSeek(seconds)}
+      title={`Jump to ${formatTime(seconds)}`}
+    >
+      <Clock size={10} />
+      {formatTime(seconds)}
+    </button>
+  );
+}
+
+// Bullet list shared by sections and subsections
+function BulletList({ bullets }) {
+  if (!bullets?.length) return null;
+  return (
+    <ul className="bullet-list">
+      {bullets.map((b, i) => (
+        <li key={i}>{b}</li>
+      ))}
+    </ul>
+  );
+}
+
+// A collapsible subsection inside a talking point
+function SubSection({ sub, onSeek }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="subsection">
+      <button
+        className="subsection__header"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <ChevronRight
+          size={12}
+          className={`subsection__chevron ${open ? "subsection__chevron--open" : ""}`}
+        />
+        <span className="subsection__title">{sub.title}</span>
+        <TimestampLink seconds={sub.ref_start} onSeek={onSeek} />
+      </button>
+      {open && <BulletList bullets={sub.bullets} />}
+    </div>
+  );
+}
+
+// A top-level talking point section
+function TalkingPointCard({ tp, onSeek }) {
+  const [open, setOpen] = useState(true);
+  const hasContent = tp.bullets?.length > 0 || tp.subsections?.length > 0;
+
+  return (
+    <div className="topic">
+      <button
+        className="topic__header"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <ChevronRight
+          size={13}
+          className={`topic__chevron ${open ? "topic__chevron--open" : ""}`}
+        />
+        <span className="topic__title">{tp.title}</span>
+        <TimestampLink seconds={tp.ref_start} onSeek={onSeek} />
+      </button>
+
+      {open && hasContent && (
+        <div className="topic__body">
+          {/* Top-level bullets (points that don't belong to a subsection) */}
+          <BulletList bullets={tp.bullets} />
+
+          {/* Nested subsections */}
+          {tp.subsections?.map((sub, i) => (
+            <SubSection key={i} sub={sub} onSeek={onSeek} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// A single action item with a checkbox
+function ActionRow({ item, onToggle }) {
+  return (
+    <li className={`action ${item.completed ? "action--done" : ""}`}>
+      <button
+        className="action__checkbox"
+        onClick={onToggle}
+        aria-label={item.completed ? "Mark incomplete" : "Mark complete"}
+      >
+        {item.completed
+          ? <CheckSquare size={15} />
+          : <Square size={15} />
+        }
+      </button>
+
+      <span className="action__task">{item.task}</span>
+
+      <span className="action__meta">
+        {item.owner && <span className="action__owner">{item.owner}</span>}
+        {item.due   && <span className="action__due">{item.due}</span>}
+      </span>
+    </li>
+  );
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
 export default function SummaryView({ result, onSeek }) {
   const { transcription, summary } = result;
-  const { talking_points, action_items, meeting_date, summary: overview, model_used } = summary;
+  const { talking_points, meeting_date, summary: overview, model_used } = summary;
+
+  // Local checkbox state — starts from what the model returned
+  const [actionItems, setActionItems] = useState(summary.action_items);
+
+  function toggleAction(index) {
+    setActionItems((prev) =>
+      prev.map((ai, i) =>
+        i === index ? { ...ai, completed: !ai.completed } : ai
+      )
+    );
+  }
+
+  const doneCount = actionItems.filter((a) => a.completed).length;
 
   return (
     <div className="summary">
 
-      {/* Meta row */}
+      {/* Meta badges */}
       <div className="summary__meta">
         {meeting_date && (
           <span className="summary__badge">{meeting_date}</span>
         )}
-        <span className="summary__badge summary__badge--dim">
-          {model_used}
-        </span>
+        <span className="summary__badge summary__badge--dim">{model_used}</span>
         <span className="summary__badge summary__badge--dim">
           {transcription.language.toUpperCase()} · {Math.round(transcription.duration_seconds / 60)} min
         </span>
       </div>
 
-      {/* Overview */}
+      {/* Overview paragraph */}
       <section className="summary__section">
         <p className="summary__overview">{overview}</p>
       </section>
@@ -36,52 +157,30 @@ export default function SummaryView({ result, onSeek }) {
       {talking_points.length > 0 && (
         <section className="summary__section">
           <h2 className="summary__heading">
-            <MessageSquare size={14} />
+            <MessageSquare size={13} />
             Talking points
           </h2>
-
           <div className="summary__topics">
             {talking_points.map((tp, i) => (
-              <div key={i} className="topic">
-                <div className="topic__header">
-                  <span className="topic__title">{tp.title}</span>
-                  <button
-                    className="topic__timestamp"
-                    onClick={() => onSeek(tp.ref_start)}
-                    title={`Jump to ${formatTime(tp.ref_start)}`}
-                  >
-                    <Clock size={11} />
-                    {formatTime(tp.ref_start)}
-                  </button>
-                </div>
-                <ul className="topic__bullets">
-                  {tp.bullets.map((b, j) => (
-                    <li key={j}>{b}</li>
-                  ))}
-                </ul>
-              </div>
+              <TalkingPointCard key={i} tp={tp} onSeek={onSeek} />
             ))}
           </div>
         </section>
       )}
 
       {/* Action items */}
-      {action_items.length > 0 && (
+      {actionItems.length > 0 && (
         <section className="summary__section">
           <h2 className="summary__heading">
-            <CheckSquare size={14} />
+            <CheckSquare size={13} />
             Action items
+            <span className="summary__action-count">
+              {doneCount}/{actionItems.length}
+            </span>
           </h2>
-
           <ul className="summary__actions">
-            {action_items.map((ai, i) => (
-              <li key={i} className="action">
-                <span className="action__task">{ai.task}</span>
-                <span className="action__meta">
-                  {ai.owner && <span className="action__owner">{ai.owner}</span>}
-                  {ai.due   && <span className="action__due">{ai.due}</span>}
-                </span>
-              </li>
+            {actionItems.map((ai, i) => (
+              <ActionRow key={i} item={ai} onToggle={() => toggleAction(i)} />
             ))}
           </ul>
         </section>
