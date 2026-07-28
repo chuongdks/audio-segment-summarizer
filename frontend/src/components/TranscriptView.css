@@ -1,0 +1,60 @@
+.transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Fixed height with scroll so the panel doesn't push the layout */
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.transcript__row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.transcript__row:hover {
+  background: var(--bg-surface);
+}
+
+/* Active segment — highlighted as audio plays */
+.transcript__row--active {
+  background: var(--accent-glow);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+.transcript__row--active .transcript__text {
+  color: var(--text-primary);
+}
+
+/* Timestamp pill — clickable to seek */
+.transcript__timestamp {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;   /* align with first line of text */
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.transcript__timestamp:hover {
+  background: rgba(74, 222, 128, 0.2);
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.transcript__text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  transition: color 0.15s;
+}

@@ -92,7 +92,7 @@ async def summarize_segments(segments: list[TranscriptSegment]):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Summarization failed: {e}")
 
-
+# This api is prob for testing the transcribe and summarize functionality both at the same time, since front end call transcribe AND then summarize API
 @app.post("/transcribe-and-summarize", response_model=TranscribeAndSummarizeResult)
 async def transcribe_and_summarize(file: UploadFile = File(...)):
     """

@@ -8,7 +8,7 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-const AudioPlayer = forwardRef(function AudioPlayer({ src }, ref) {
+const AudioPlayer = forwardRef(function AudioPlayer({ src, onTimeUpdate }, ref) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -40,6 +40,12 @@ const AudioPlayer = forwardRef(function AudioPlayer({ src }, ref) {
     setCurrent(val);
   }
 
+  function handleTimeUpdate(e) {
+    const t = e.target.currentTime;
+    setCurrent(t);
+    onTimeUpdate?.(t);   // bubble up to App so TranscriptView can highlight
+  }
+
   const progress = duration ? (current / duration) * 100 : 0;
 
   return (
@@ -47,7 +53,7 @@ const AudioPlayer = forwardRef(function AudioPlayer({ src }, ref) {
       <audio
         ref={audioRef}
         src={src}
-        onTimeUpdate={(e) => setCurrent(e.target.currentTime)}
+        onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={(e) => setDuration(e.target.duration)}
         onEnded={() => setPlaying(false)}
       />
