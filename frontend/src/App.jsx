@@ -6,6 +6,7 @@ import SummaryView from "./components/SummaryView";
 import TranscriptView from "./components/TranscriptView";
 import StatusBar from "./components/StatusBar";
 import Tabs from "./components/Tabs";
+import SettingsDrawer from "./components/SettingsDrawer";
 import "./App.css";
 
 const TABS = [
@@ -81,6 +82,7 @@ export default function App() {
             New recording
           </button>
         )}
+        <SettingsDrawer />
       </header>
 
       <main className="app-main">

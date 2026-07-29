@@ -1,36 +1,35 @@
-import os
 from faster_whisper import WhisperModel
+from config import get_config
 from models import TranscriptSegment, TranscriptionResult
-
-# Model size tradeoffs:
-#   "tiny"   — fastest, least accurate  (~39M params)
-#   "base"   — good for clear audio     (~74M params)
-#   "medium" — sweet spot               (~769M params)  ← recommended
-#   "large-v3" — best accuracy          (~1550M params)
-WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL", "base")
-
-# "cpu" works everywhere; use "cuda" if you have an Nvidia GPU
-DEVICE = os.getenv("WHISPER_DEVICE", "cuda")
-COMPUTE_TYPE = "int8" if DEVICE == "cpu" else "float16"
 
 
 class Transcriber:
     _instance: "Transcriber | None" = None
+    _loaded_model:  str | None = None
+    _loaded_device: str | None = None
 
-    def __init__(self):
-        print(f"[Transcriber] Loading Whisper '{WHISPER_MODEL_SIZE}' on {DEVICE}...")
-        self.model = WhisperModel(
-            WHISPER_MODEL_SIZE,
-            device=DEVICE,
-            compute_type=COMPUTE_TYPE,
-        )
+    def __init__(self, model_size: str, device: str):
+        compute_type = "int8" if device == "cpu" else "float16"
+        print(f"[Transcriber] Loading Whisper '{model_size}' on {device} ({compute_type})...")
+        self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
         print("[Transcriber] Model ready.")
 
     @classmethod
     def get(cls) -> "Transcriber":
-        """Singleton — model loads once and stays in memory."""
-        if cls._instance is None:
-            cls._instance = cls()
+        """
+        Singleton that reloads if whisper_model or whisper_device changed in config.
+        This means changing the model in the UI takes effect on the next transcription
+        without restarting the server.
+        """
+        cfg = get_config()
+        if (
+            cls._instance is None
+            or cls._loaded_model  != cfg.whisper_model
+            or cls._loaded_device != cfg.whisper_device
+        ):
+            cls._instance      = cls(cfg.whisper_model, cfg.whisper_device)
+            cls._loaded_model  = cfg.whisper_model
+            cls._loaded_device = cfg.whisper_device
         return cls._instance
 
     def transcribe(self, audio_path: str) -> TranscriptionResult:

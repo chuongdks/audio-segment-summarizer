@@ -1,13 +1,8 @@
 import json
-import os
 import httpx
 
+from config import get_config
 from models import TranscriptSegment, MeetingSummary, TalkingPoint, SubSection, ActionItem
-
-OLLAMA_BASE_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
-OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "360"))
-MAX_SEGMENTS = int(os.getenv("MAX_SEGMENTS", "300"))
 
 
 # ── Prompt ────────────────────────────────────────────────────────────────────
@@ -90,8 +85,9 @@ def _build_seg_index(segments: list[TranscriptSegment]) -> dict[int, float]:
 # ── Ollama client ─────────────────────────────────────────────────────────────
 
 def _call_ollama(prompt: str) -> str:
+    cfg = get_config()
     payload = {
-        "model": OLLAMA_MODEL,
+        "model": cfg.ollama_model,
         "prompt": prompt,
         "stream": False,
         "options": {
@@ -103,27 +99,27 @@ def _call_ollama(prompt: str) -> str:
     # Explicit Timeout so the read phase (model generation) gets the full
     # OLLAMA_TIMEOUT budget, passing a bare float only sets the connect timeout.
     timeout = httpx.Timeout(
-        connect=10.0,        # fail fast if Ollama is not running
-        read=OLLAMA_TIMEOUT, # generation can be slow on large transcripts
+        connect=10.0,
+        read=cfg.ollama_timeout,
         write=30.0,
         pool=5.0,
     )
 
     try:
         response = httpx.post(
-            f"{OLLAMA_BASE_URL}/api/generate",
+            f"{cfg.ollama_url}/api/generate",
             json=payload,
             timeout=timeout,
         )
         response.raise_for_status()
     except httpx.ConnectError:
         raise RuntimeError(
-            f"Could not reach Ollama at {OLLAMA_BASE_URL}. "
+            f"Could not reach Ollama at {cfg.ollama_url}. "
             "Make sure Ollama is running: `ollama serve`"
         )
     except httpx.TimeoutException:
         raise RuntimeError(
-            f"Ollama request timed out after {OLLAMA_TIMEOUT}s. "
+            f"Ollama request timed out after {cfg.ollama_timeout}s. "
             "Try a smaller model or increase OLLAMA_TIMEOUT."
         )
     return response.json()["response"]
@@ -169,10 +165,11 @@ def summarize(segments: list[TranscriptSegment]) -> MeetingSummary:
     # Truncate very long transcripts to keep the prompt within a manageable
     # context size for smaller models. The seg_index still uses ALL segments
     # so timestamp lookups stay accurate even for truncated runs.
-    if len(segments) > MAX_SEGMENTS:
-        print(f"[Summarizer] Truncating {len(segments)} segments to {MAX_SEGMENTS} "
-              f"(increase MAX_SEGMENTS in .env for longer meetings)")
-        segments_for_prompt = segments[:MAX_SEGMENTS]
+    cfg = get_config()
+    if len(segments) > cfg.max_segments:
+        print(f"[Summarizer] Truncating {len(segments)} segments to {cfg.max_segments} "
+              f"(change MAX_SEGMENTS in settings or .env for longer meetings)")
+        segments_for_prompt = segments[:cfg.max_segments]
     else:
         segments_for_prompt = segments
 
@@ -224,5 +221,5 @@ def summarize(segments: list[TranscriptSegment]) -> MeetingSummary:
         summary=data.get("summary", ""),
         talking_points=talking_points,
         action_items=action_items,
-        model_used=OLLAMA_MODEL,
+        model_used=cfg.ollama_model,
     )

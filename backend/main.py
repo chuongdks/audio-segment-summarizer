@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from transcriber import Transcriber
 from summarizer import summarize
+from config import get_config, patch_config, AppConfig, ConfigPatch
 from models import TranscriptionResult, MeetingSummary, TranscriptSegment, TranscribeAndSummarizeResult
 
 
@@ -55,12 +56,31 @@ def _save_upload(file: UploadFile) -> tuple[str, str]:
 
 @app.get("/health")
 def health():
+    cfg = get_config()
     return {
         "status": "ok",
-        "whisper_model": os.getenv("WHISPER_MODEL", "medium"),
-        "ollama_model": os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
-        "ollama_url": os.getenv("OLLAMA_URL", "http://localhost:11434"),
+        "whisper_model":  cfg.whisper_model,
+        "whisper_device": cfg.whisper_device,
+        "ollama_model":   cfg.ollama_model,
+        "ollama_url":     cfg.ollama_url,
     }
+
+
+@app.get("/config", response_model=AppConfig)
+def read_config():
+    """Return the current active configuration (seeded from .env, may be patched)."""
+    return get_config()
+
+
+@app.patch("/config", response_model=AppConfig)
+def update_config(patch: ConfigPatch):
+    """
+    Update one or more config values for this session.
+    Changes take effect on the next request — .env is never modified.
+    Changing whisper_model or whisper_device will cause the Whisper model
+    to reload on the next transcription.
+    """
+    return patch_config(patch)
 
 
 @app.post("/transcribe", response_model=TranscriptionResult)
