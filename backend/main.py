@@ -6,11 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()  # reads backend/.env before anything else
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from transcriber import Transcriber
 from summarizer import summarize
+from summarizers import SUMMARIZERS
 from config import get_config, patch_config, AppConfig, ConfigPatch
 from models import TranscriptionResult, MeetingSummary, TranscriptSegment, TranscribeAndSummarizeResult
 
@@ -66,6 +67,21 @@ def health():
     }
 
 
+@app.get("/summarizers")
+def list_summarizers():
+    """List available summarizer styles and their descriptions."""
+    descriptions = {
+        "meeting": "Structured meeting notes with nested talking points and action items",
+        "general": "Lightweight summary with flat talking points, no action items",
+    }
+    return {
+        "styles": [
+            {"id": k, "description": descriptions.get(k, "")}
+            for k in SUMMARIZERS.keys()
+        ]
+    }
+
+
 @app.get("/config", response_model=AppConfig)
 def read_config():
     """Return the current active configuration (seeded from .env, may be patched)."""
@@ -99,13 +115,20 @@ async def transcribe_audio(file: UploadFile = File(...)):
 
 
 @app.post("/summarize", response_model=MeetingSummary)
-async def summarize_segments(segments: list[TranscriptSegment]):
+async def summarize_segments(
+    segments: list[TranscriptSegment],
+    style: str = Query(default="meeting", description="Summarizer style: meeting | general"),
+):
     """
-    Accept pre-transcribed segments → return structured meeting summary.
-    Use this if you already have a transcript and just want summarization.
+    Accept pre-transcribed segments → return structured summary.
+    Use the `style` query param to select the summarizer:
+    - **meeting** (default): nested talking points, action items, timestamps
+    - **general**: lightweight summary with flat talking points, no action items
     """
     try:
-        return summarize(segments)
+        return summarize(segments, style=style)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except RuntimeError as e:
         # Ollama unreachable / timeout — surface as 503
         raise HTTPException(status_code=503, detail=str(e))
